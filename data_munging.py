@@ -118,11 +118,9 @@ def format_notification(message):
     return message
                 
 
-raw_data =  open(os.path.join(__location__, 'phil_raw.txt'),'r')
+raw_data =  open(os.path.join(__location__, 'data/phil_raw.txt'),'r')
 
-##cleaned_data =  open(os.path.join(__location__, 'phil_raw.txt'),'w')
-
-cleaned_df = DataFrame(columns=('date_time', 'user', 'message'))
+#cleaned_df = DataFrame(columns=('date_time', 'user', 'message'))
 
 lines =  raw_data.readlines()
 
@@ -134,9 +132,14 @@ count = 0
 current_date_time = "date_time"
 current_user = "user"
 current_message = "message"
+current_image_count = 0
+current_emoji_count = 0
+current_emoji = set()
+
 
 unicode_set = set()
 
+pandas_dicts = {}
 
 for line_raw in lines:
     line= line_raw.rstrip('\n')
@@ -147,8 +150,10 @@ for line_raw in lines:
         continue
     else:
         if user == 'WhatsApp':    
-            message = format_notification(message)            
-        cleaned_df.loc[df_index] = [current_date_time, current_user, current_message]
+            message = format_notification(message)
+        new_dict = {'date_time2':current_date_time,'user':current_user,'message':current_message}            
+        #cleaned_df.loc[df_index] = [current_date_time, current_user, current_message]
+        pandas_dicts[df_index]=new_dict
         current_date_time = date_time
         current_user = user
         current_message = process_body(message)
@@ -159,8 +164,9 @@ for line_raw in lines:
 
 #print unicode_set
 
+cleaned_df = DataFrame.from_dict(pandas_dicts, orient = 'index')
 
-output_path = os.path.join(__location__, 'cleaned_data.csv')
-cleaned_df.to_csv(output_path, index = False, quoting = csv.QUOTE_ALL, header = False)
+output_path = os.path.join(__location__, 'data/cleaned_data.csv')
+cleaned_df[1:].to_csv(output_path, index = False, quoting = csv.QUOTE_ALL)
     
 
