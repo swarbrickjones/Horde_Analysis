@@ -1,8 +1,15 @@
 import os
 import time
-import pandas as pd
 import csv
 from pandas import DataFrame
+import sys
+import inspect
+
+cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"emoji")))
+if cmd_subfolder not in sys.path:
+    sys.path.insert(0, cmd_subfolder)
+    
+from unicode_conversion import convert_unicode
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -62,9 +69,6 @@ user_name_map = {    \
     '\xe2\x80\xaa+44 7850 688790\xe2\x80\xac':'Sadie'
     }
 
-
-
-
 def get_date ( input_string ):
     date = None
     try:
@@ -73,15 +77,21 @@ def get_date ( input_string ):
         date = time.strptime(input_string + ' 2014',input_date_format)
     return time.strftime('%d %b %H:%M %Y',date)
         
-def process_body(line):
-    return  line.replace("<Media omitted>","[MEDIA]") \
-                .replace('"', '')
 
-    
-def get_cleaned_line(date_time, user, body):
-    return date_time + ":::" + user + ":::" + process_body(body) + "\n"
-    
-    
+def process_body(text,unicode_set):
+    text =  ''.join([char if ord(char) < 128 else format_non_ascii(char,unicode_set)  for char in unicode(text)])
+    return text.replace("<Media omitted>"," [MEDIA] ") \
+                .replace('"', '') \
+  
+
+
+def format_non_ascii(char, unicode_set):
+    u_escaped = str(char.encode('unicode_escape'))
+    try :
+        return convert_unicode(u_escaped)
+    except KeyError :
+        return char
+        
 def format_notification(message):
     for key in user_name_map.keys():
         message = message.replace(key, user_name_map[key])
@@ -115,11 +125,14 @@ current_date_time = "date_time"
 current_user = "user"
 current_message = "message"
 
+unicode_set = set()
+
+
 for line_raw in lines:
     line= line_raw.rstrip('\n')
     date_time,user,message = split_line(current_date_time, current_user, line)
     if user.__eq__(current_user) and current_user != 'WhatsApp':
-        current_message = current_message + " // " + process_body(message)
+        current_message = current_message + " // " + process_body(message,unicode_set)
         continue
     else:
         if user == 'WhatsApp':    
@@ -127,12 +140,15 @@ for line_raw in lines:
         cleaned_df.loc[df_index] = [current_date_time, current_user, current_message]
         current_date_time = date_time
         current_user = user
-        current_message = process_body(message)
+        current_message = process_body(message,unicode_set)
         df_index += 1
     if count % 1000 == 0:
         print count
     count += 1
-   
+
+#print unicode_set
+
+
 output_path = os.path.join(__location__, 'cleaned_data.csv')
 cleaned_df.to_csv(output_path, index = False, quoting = csv.QUOTE_ALL, header = False)
     
