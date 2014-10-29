@@ -88,20 +88,31 @@ def is_short_time(current_time, date_time):
     return diff < short_time
 
 def process_body(text):
-    text =  ''.join([char if ord(char) < 128 else format_non_ascii(char)  for char in unicode(text)])
+    text , emojis = process_unicode(text)
     return text.replace("<Media omitted>"," [MEDIA] ") \
-                .replace('"', '') \
-  
+                .replace('"', ''), emojis \
 
+def process_unicode(string):
+    str_list = []
+    emojis = set()
+    new_char = ""
+    for char in unicode(string):
+        if ord(char) < 128:
+            new_char = char
+        else : 
+            new_char = format_non_ascii(char,emojis)
+        str_list.append(new_char)
+    return "".join(str_list), emojis
 
-def format_non_ascii(char):
+def format_non_ascii(char,emojis):
     u_escaped = str(char.encode('unicode_escape'))
     try :
         converted_string =  convert_unicode(u_escaped)
+        emojis.add(converted_string)
         return ' EMOJI[' + converted_string + '] '
     except KeyError :
         return char
-        
+
 def format_notification(message):
     for key in user_name_map.keys():
         message = message.replace(key, user_name_map[key])
@@ -116,7 +127,9 @@ def format_notification(message):
     if message[-11:] == "was removed":
         message = "USER_LEFT : " + message[:-12]
     return message
-                
+  
+def process_emoji_set(emoji_set):
+    return "".join([str(i)+',' for i in emoji_set])[:-1]              
 
 raw_data =  open(os.path.join(__location__, 'data/phil_raw.txt'),'r')
 
@@ -132,10 +145,7 @@ count = 0
 current_date_time = "date_time"
 current_user = "user"
 current_message = "message"
-current_image_count = 0
-current_emoji_count = 0
 current_emoji = set()
-
 
 unicode_set = set()
 
@@ -143,26 +153,33 @@ pandas_dicts = {}
 
 for line_raw in lines:
     line= line_raw.rstrip('\n')
-    date_time,user,message = split_line(current_date_time, current_user, line)
+    date_time, user, message = split_line(current_date_time, current_user, line)
     if user.__eq__(current_user) and current_user != 'WhatsApp' and is_short_time(current_date_time, date_time):
         current_date_time = date_time
-        current_message = current_message + ". " + process_body(message)
+        text,emojis = process_body(message)
+        current_message = current_message + ". " + text
+        current_emoji = current_emoji.union(emojis)
         continue
     else:
         if user == 'WhatsApp':    
             message = format_notification(message)
-        new_dict = {'date_time2':current_date_time,'user':current_user,'message':current_message}            
-        #cleaned_df.loc[df_index] = [current_date_time, current_user, current_message]
+        emoji_str = process_emoji_set(current_emoji)
+        new_dict = {'date_time':current_date_time,
+        'user':current_user,
+        'message':current_message,
+        'emoji':emoji_str        
+        }            
         pandas_dicts[df_index]=new_dict
         current_date_time = date_time
         current_user = user
-        current_message = process_body(message)
+        current_message, current_emoji = process_body(message)
         df_index += 1
     if count % 1000 == 0:
         print count
     count += 1
 
-#print unicode_set
+
+    
 
 cleaned_df = DataFrame.from_dict(pandas_dicts, orient = 'index')
 
