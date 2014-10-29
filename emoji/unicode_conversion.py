@@ -33,4 +33,4 @@ def convert_unicode(string):
         if substring in lower_unicodes:
             return substring.lower()
         return unicode_dict[substring].lower()
-    return string
+    else: raise KeyError

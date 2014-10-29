@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import timedelta, datetime
 import csv
 from pandas import DataFrame
 import sys
@@ -28,9 +29,7 @@ def split_line(previous_time, previous_user, input_text):
         return time_string, 'WhatsApp', date_split[1]
     return time_string, user_name_map[message_split[0]], message_split[1]
     
-input_date_format = '%H:%M, %d %b %Y'
 
-output_date_format = '%H:%M, %d %b %Y'
 
 user_name_map = {    \
     'Eliza Botts' : 'Eliza', \
@@ -69,26 +68,37 @@ user_name_map = {    \
     '\xe2\x80\xaa+44 7850 688790\xe2\x80\xac':'Sadie'
     }
 
+input_date_format = '%H:%M, %d %b %Y'
+output_date_format = '%d %b %H:%M %Y'
+
 def get_date ( input_string ):
     date = None
     try:
         date = time.strptime(input_string,input_date_format)
     except ValueError:
         date = time.strptime(input_string + ' 2014',input_date_format)
-    return time.strftime('%d %b %H:%M %Y',date)
-        
+    return time.strftime(output_date_format,date)
+    
+short_time = timedelta(minutes = 5)  
+    
+def is_short_time(current_time, date_time):
+    start_date = datetime.strptime(date_time,output_date_format)
+    end_date = datetime.strptime(current_time,output_date_format)
+    diff = abs(start_date - end_date)
+    return diff < short_time
 
-def process_body(text,unicode_set):
-    text =  ''.join([char if ord(char) < 128 else format_non_ascii(char,unicode_set)  for char in unicode(text)])
+def process_body(text):
+    text =  ''.join([char if ord(char) < 128 else format_non_ascii(char)  for char in unicode(text)])
     return text.replace("<Media omitted>"," [MEDIA] ") \
                 .replace('"', '') \
   
 
 
-def format_non_ascii(char, unicode_set):
+def format_non_ascii(char):
     u_escaped = str(char.encode('unicode_escape'))
     try :
-        return convert_unicode(u_escaped)
+        converted_string =  convert_unicode(u_escaped)
+        return ' EMOJI[' + converted_string + '] '
     except KeyError :
         return char
         
@@ -131,8 +141,9 @@ unicode_set = set()
 for line_raw in lines:
     line= line_raw.rstrip('\n')
     date_time,user,message = split_line(current_date_time, current_user, line)
-    if user.__eq__(current_user) and current_user != 'WhatsApp':
-        current_message = current_message + " // " + process_body(message,unicode_set)
+    if user.__eq__(current_user) and current_user != 'WhatsApp' and is_short_time(current_date_time, date_time):
+        current_date_time = date_time
+        current_message = current_message + ". " + process_body(message)
         continue
     else:
         if user == 'WhatsApp':    
@@ -140,7 +151,7 @@ for line_raw in lines:
         cleaned_df.loc[df_index] = [current_date_time, current_user, current_message]
         current_date_time = date_time
         current_user = user
-        current_message = process_body(message,unicode_set)
+        current_message = process_body(message)
         df_index += 1
     if count % 1000 == 0:
         print count
