@@ -94,7 +94,7 @@ def process_body(text):
 
 def process_unicode(string):
     str_list = []
-    emojis = set()
+    emojis = list()
     new_char = ""
     for char in unicode(string):
         if ord(char) < 128:
@@ -108,7 +108,11 @@ def format_non_ascii(char,emojis):
     u_escaped = str(char.encode('unicode_escape'))
     try :
         converted_string =  convert_unicode(u_escaped)
-        emojis.add(converted_string)
+        if len(converted_string) == 4 or len(converted_string) > 6:
+            raise KeyError
+        if converted_string == '1f1f2':
+            converted_string = '1f1fd'
+        emojis.append(converted_string)
         return ' EMOJI[' + converted_string + '] '
     except KeyError :
         return char
@@ -145,9 +149,9 @@ count = 0
 current_date_time = "date_time"
 current_user = "user"
 current_message = "message"
-current_emoji = set()
+current_emoji = list()
 
-unicode_set = set()
+unicode_set = list()
 
 pandas_dicts = {}
 
@@ -158,7 +162,7 @@ for line_raw in lines:
         current_date_time = date_time
         text,emojis = process_body(message)
         current_message = current_message + ". " + text
-        current_emoji = current_emoji.union(emojis)
+        current_emoji += emojis
         continue
     else:
         if user == 'WhatsApp':    
