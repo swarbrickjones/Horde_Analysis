@@ -25,12 +25,12 @@ for category in root:
 print lower_unicodes 
 
 def convert_unicode(string):
-    if string.startswith("\U000"):
+    if string.startswith("\U000") :
         #print string
         return string[5:]
-    if string.startswith("\u"):        
+    if string.startswith("\u") and len(string) > 5:        
         substring = string[2:].lower()
-        if substring in lower_unicodes:
+        if substring in lower_unicodes :
             return substring.lower()
         return unicode_dict[substring].lower()
     else: raise KeyError

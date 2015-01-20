@@ -33,50 +33,83 @@ def split_line(previous_time, previous_user, input_text):
 
 user_name_map = {    \
     'Eliza Botts' : 'Eliza', \
+    'Eliza' : 'Eliza', \
     'Cate':'Cate', \
+    'cate fuchter':'Cate', \
+    '\xe2\x80\xaa+44 7754 268447\xe2\x80\xac':'Cate', \
     '\xe2\x80\xaa+44 7807 744465\xe2\x80\xac':'Hannah', \
+    'Hannah Murphy':'Hannah', \
     'Kritzia':'Krizia', \
+    'Krizia':'Krizia', \
     'Wills':'Wills',  \
+    'Adam Wills':'Wills',  \
     'Angela':'Angela',  \
     'Bunn':'Bunn',  \
+    'Alex Bunn':'Bunn',   \
     '\xe2\x80\xaa+44 7979 853510\xe2\x80\xac':'Chris', \
+    'Chris (Health Unlocked)':'Chris', \
     'Dave Mendez':'Dave', \
+    'Dave':'Dave', \
     '\xe2\x80\xaa+44 7794 501335\xe2\x80\xac':'Catrin', \
     '\xe2\x80\xaa+44 7545 989149\xe2\x80\xac':'Dan',  \
+    'Dan Sluckin':'Dan',  \
     'Teegan':'Tegan', \
+    'Tegan':'Tegan', \
     'Mike':'Mike', \
+    'Mike Swarbrick Jones':'Mike', \
     'Joe Jarman':'Joe', \
     'Alan Wright':'Alan', \
     'p tschismarov':'Phil', \
+    'Phil':'Phil', \
     'WhatsApp':'WhatsApp', \
     'Henry Franks':'Henry', \
+    'Henry Dranks':'Henry', \
     '\xe2\x80\xaa+61 405 567 873\xe2\x80\xac':'Wagg', \
     'Mateusz Tylicki':'Mateusz', \
+    'Mateusz':'Mateusz', \
     'Marth':'Marth', \
+    'Martha':'Marth', \
     'Lora Staffenschloten' : 'Lora', \
+    'Lora' : 'Lora', \
     'Bongo':'Bongo', \
     '\xe2\x80\xaa+44 7830 332317\xe2\x80\xac':'Simone', \
     'Shaggy Crazy Horse':'Shaggy', \
+    'Shaggy':'Shaggy', \
     '\xe2\x80\xaa+44 7834 379555\xe2\x80\xac':'Vinay', \
+    'Vinay':'Vinay', \
     'Owen James':'Owen', \
+    'Owen':'Owen', \
     'Slam':'Sam', \
-    '\xe2\x80\xaa+44 7754 268447\xe2\x80\xac':'Cate', \
+    'Sam Roberts':'Sam', \
     '\xe2\x80\xaa+44 7502 048124\xe2\x80\xac':'Lorna', \
+    'Lorna':'Lorna', \
     'Vanessa "Beast" Matthews':'Vanessa', \
+    'Vanessa':'Vanessa', \
     'Adamina Carden':'Adimina', \
+    'Adimina':'Adimina', \
     '\xe2\x80\xaa+44 7944 609055\xe2\x80\xac':'Em', \
-    '\xe2\x80\xaa+44 7850 688790\xe2\x80\xac':'Sadie'
+    '\xe2\x80\xaa+44 7850 688790\xe2\x80\xac':'Sadie', \
+    'Lisa':'Lisa','Loz':'Loz', \
+    'Tanya':'Tanya', 'Pete Morey':'Pete'
     }
-
-input_date_format = '%H:%M, %d %b %Y'
+input_date_format_0 = '%d %b %Y %H:%M'
+input_date_format_1 = '%H:%M, %d %b %Y'
+input_date_format_2 = '%d %b %H:%M %Y'
 output_date_format = '%d %b %H:%M %Y'
 
 def get_date ( input_string ):
     date = None
     try:
-        date = time.strptime(input_string,input_date_format)
+        date = time.strptime(input_string,input_date_format_0)
     except ValueError:
-        date = time.strptime(input_string + ' 2014',input_date_format)
+        try:
+            date = time.strptime(input_string,input_date_format_1)
+        except ValueError:
+            try :
+                date = time.strptime(input_string + ' 2014',input_date_format_1)
+            except ValueError: 
+                print input_string
+                date = time.strptime(input_string + ' 2015',input_date_format_2)
     return time.strftime(output_date_format,date)
     
 short_time = timedelta(minutes = 5)  
@@ -94,7 +127,7 @@ def process_body(text):
 
 def process_unicode(string):
     str_list = []
-    emojis = set()
+    emojis = list()
     new_char = ""
     for char in unicode(string):
         if ord(char) < 128:
@@ -108,7 +141,11 @@ def format_non_ascii(char,emojis):
     u_escaped = str(char.encode('unicode_escape'))
     try :
         converted_string =  convert_unicode(u_escaped)
-        emojis.add(converted_string)
+        if len(converted_string) == 4 or len(converted_string) > 6:
+            raise KeyError
+        if converted_string == '1f1f2':
+            converted_string = '1f1fd'
+        emojis.append(converted_string)
         return ' EMOJI[' + converted_string + '] '
     except KeyError :
         return char
@@ -131,7 +168,7 @@ def format_notification(message):
 def process_emoji_set(emoji_set):
     return "".join([str(i)+',' for i in emoji_set])[:-1]              
 
-raw_data =  open(os.path.join(__location__, 'data/phil_raw.txt'),'r')
+raw_data =  open(os.path.join(__location__, 'data/updated_paste.txt'),'r')
 
 #cleaned_df = DataFrame(columns=('date_time', 'user', 'message'))
 
@@ -145,9 +182,9 @@ count = 0
 current_date_time = "date_time"
 current_user = "user"
 current_message = "message"
-current_emoji = set()
+current_emoji = list()
 
-unicode_set = set()
+unicode_set = list()
 
 pandas_dicts = {}
 
@@ -158,7 +195,7 @@ for line_raw in lines:
         current_date_time = date_time
         text,emojis = process_body(message)
         current_message = current_message + ". " + text
-        current_emoji = current_emoji.union(emojis)
+        current_emoji += emojis
         continue
     else:
         if user == 'WhatsApp':    
