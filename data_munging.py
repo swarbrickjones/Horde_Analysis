@@ -35,7 +35,7 @@ user_name_map = {    \
     'Eliza Botts' : 'Eliza', \
     'Eliza' : 'Eliza', \
     'Cate':'Cate', \
-    'cate fuchter':'Cate', \
+    'Z cate fuchter':'Cate', \
     '\xe2\x80\xaa+44 7754 268447\xe2\x80\xac':'Cate', \
     '\xe2\x80\xaa+44 7807 744465\xe2\x80\xac':'Hannah', \
     'Hannah Murphy':'Hannah', \
@@ -108,8 +108,8 @@ def get_date ( input_string ):
             try :
                 date = time.strptime(input_string + ' 2014',input_date_format_1)
             except ValueError: 
-                print input_string
                 date = time.strptime(input_string + ' 2015',input_date_format_2)
+    print date            
     return time.strftime(output_date_format,date)
     
 short_time = timedelta(minutes = 5)  
