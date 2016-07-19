@@ -110,7 +110,10 @@ user_name_map = {
     '+44 7944 609055': 'Em',
     '+44 7850 688790': 'Sadie',
     'Lisa': 'Lisa', 'Loz': 'Loz',
-    'Tanya': 'Tanya', 'Pete Morey': 'Pete'
+    'Tanya': 'Tanya', 'Pete Morey': 'Pete',
+    'AlanWright' : 'Alan', 'Cat': 'Cat', "Gabriella": 'Gabriella', 
+    '+44 7707 946015':'Mal', 'Franzi KREUZ':'Franzi', 'Cato Chan':'Cate',
+    "Luana Jarman" : 'Luana', '+44 7983 605115':'Cat'
 }
 
 
